@@ -16,6 +16,7 @@ void HDF5OutputLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
                        H5P_DEFAULT);
   CHECK_GE(file_id_, 0) << "Failed to open HDF5 file" << file_name_;
   file_opened_ = true;
+  current_batch_ = 0;
 }
 
 template <typename Dtype>
@@ -25,7 +26,7 @@ HDF5OutputLayer<Dtype>::~HDF5OutputLayer<Dtype>() {
     CHECK_GE(status, 0) << "Failed to close HDF5 file " << file_name_;
   }
 }
-
+/*
 template <typename Dtype>
 void HDF5OutputLayer<Dtype>::SaveBlobs() {
   // TODO: no limit on the number of blobs
@@ -36,10 +37,12 @@ void HDF5OutputLayer<Dtype>::SaveBlobs() {
   hdf5_save_nd_dataset(file_id_, HDF5_DATA_LABEL_NAME, label_blob_);
   LOG(INFO) << "Successfully saved " << data_blob_.num() << " rows";
 }
+*/
 
 template <typename Dtype>
 void HDF5OutputLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
+/*
   CHECK_GE(bottom.size(), 2);
   CHECK_EQ(bottom[0]->num(), bottom[1]->num());
   data_blob_.Reshape(bottom[0]->num(), bottom[0]->channels(),
@@ -56,6 +59,19 @@ void HDF5OutputLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         &label_blob_.mutable_cpu_data()[i * label_datum_dim]);
   }
   SaveBlobs();
+  */
+  CHECK_GE(bottom.size(), 1); //ensuring multiple blobs
+  CHECK_EQ(this->layer_param_.bottom_size(), bottom.size());
+  for (int i=0; i<bottom.size(); ++i) {
+    //saving each blob
+    stringstream batch_id;
+    batch_id << this->layer_param_.bottom(i) << "_" << current_batch_;
+    LOG_FIRST_N(INFO, bottom.size()) << "Saving batch " << batch_id.str()
+        << " to HDF5 file " << file_name_;
+    hdf5_save_nd_dataset(file_id_, batch_id.str(), *bottom[i]);
+  }
+  H5Fflush(file_id_, H5F_SCOPE_GLOBAL);
+  current_batch_++;
 }
 
 template <typename Dtype>
