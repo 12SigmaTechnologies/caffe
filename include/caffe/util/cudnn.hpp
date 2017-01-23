@@ -130,7 +130,7 @@ template <typename Dtype>
 inline void createNdFilterDesc(cudnnFilterDescriptor_t* desc,
     std::vector<int> shape) {
   CUDNN_CHECK(cudnnCreateFilterDescriptor(desc));
-  cudnnTensorFormat_t tensor_format;
+  cudnnTensorFormat_t tensor_format = CUDNN_TENSOR_NCHW;
 #if CUDNN_VERSION_MIN(5, 0, 0)
   CUDNN_CHECK(cudnnSetFilterNdDescriptor(*desc, dataType<Dtype>::type,
               tensor_format, shape.size(), shape.data()));
